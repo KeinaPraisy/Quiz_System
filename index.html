@@ -1,0 +1,955 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f14;
+    --surface: #16181f;
+    --surface2: #1e2029;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --accent: #7c6af7;
+    --accent2: #5fd4c3;
+    --accent3: #f7a26a;
+    --danger: #f75a5a;
+    --success: #5fd480;
+    --text: #f0f0f5;
+    --text2: #9597b0;
+    --text3: #5a5c70;
+    --font: 'Sora', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* NAV */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 60px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14,15,20,0.95); backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+  .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .badge-admin { background: rgba(124,106,247,0.2); color: var(--accent); border: 1px solid rgba(124,106,247,0.3); }
+  .badge-user { background: rgba(95,212,195,0.15); color: var(--accent2); border: 1px solid rgba(95,212,195,0.3); }
+  .nav-user { font-size: 13px; color: var(--text2); }
+  .btn-sm { font-size: 12px; padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: var(--font); transition: all 0.15s; }
+  .btn-sm:hover { background: var(--surface2); color: var(--text); }
+
+  /* SCREENS */
+  .screen { display: none; flex: 1; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* AUTH SCREEN */
+  .auth-screen { align-items: center; justify-content: center; padding: 3rem 1rem; }
+  .auth-card {
+    width: 100%; max-width: 420px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2.5rem; position: relative; overflow: hidden;
+  }
+  .auth-card::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,106,247,0.15), transparent 70%);
+    pointer-events: none;
+  }
+  .auth-tabs { display: flex; gap: 4px; margin-bottom: 2rem; background: var(--bg); border-radius: 10px; padding: 4px; }
+  .auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text3); transition: all 0.2s; }
+  .auth-tab.active { background: var(--surface2); color: var(--text); }
+  .field { margin-bottom: 1.25rem; }
+  .field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; }
+  .field input, .field select {
+    width: 100%; padding: 10px 14px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font); font-size: 14px;
+    transition: border 0.15s; outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--bg); }
+  .btn-primary {
+    width: 100%; padding: 12px; background: var(--accent); border: none;
+    border-radius: var(--radius-sm); color: #fff; font-family: var(--font);
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .auth-error { color: var(--danger); font-size: 12px; margin-top: 0.75rem; text-align: center; min-height: 16px; }
+
+  /* MAIN LAYOUT */
+  .main-layout { flex: 1; display: grid; grid-template-columns: 220px 1fr; gap: 0; }
+  .sidebar {
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; padding: 0 8px; margin-bottom: 4px; margin-top: 12px; }
+  .sidebar-label:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text2); transition: all 0.15s; border: none; background: transparent;
+    width: 100%; text-align: left; font-family: var(--font);
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(124,106,247,0.15); color: var(--accent); }
+  .nav-item .ni-icon { width: 18px; text-align: center; font-size: 15px; }
+  .content { padding: 2rem; overflow-y: auto; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .card-sm { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem 1.25rem; }
+  .page-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .page-sub { font-size: 13px; color: var(--text2); margin-bottom: 2rem; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 1.25rem; }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .stat-val { font-size: 2rem; font-weight: 700; font-family: var(--mono); }
+  .stat-val.accent { color: var(--accent); }
+  .stat-val.success { color: var(--success); }
+  .stat-val.amber { color: var(--accent3); }
+
+  /* QUIZ CARDS */
+  .quiz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+  .quiz-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;
+    transition: border-color 0.2s, transform 0.2s; cursor: pointer;
+    position: relative; overflow: hidden;
+  }
+  .quiz-card::after { content: ''; position: absolute; inset: 0; opacity: 0; background: linear-gradient(135deg, rgba(124,106,247,0.05), transparent); transition: opacity 0.2s; }
+  .quiz-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .quiz-card:hover::after { opacity: 1; }
+  .quiz-cat { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+  .cat-science { color: var(--accent2); }
+  .cat-history { color: var(--accent3); }
+  .cat-technology { color: var(--accent); }
+  .cat-general { color: #f75a9a; }
+  .cat-math { color: var(--success); }
+  .quiz-title { font-size: 1rem; font-weight: 600; line-height: 1.3; }
+  .quiz-meta { font-size: 12px; color: var(--text2); display: flex; gap: 1rem; }
+  .diff-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .diff-easy { background: rgba(95,212,128,0.15); color: var(--success); }
+  .diff-medium { background: rgba(247,162,106,0.15); color: var(--accent3); }
+  .diff-hard { background: rgba(247,90,90,0.15); color: var(--danger); }
+  .btn-start { margin-top: auto; padding: 9px; background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3); border-radius: var(--radius-sm); color: var(--accent); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-start:hover { background: var(--accent); color: #fff; }
+
+  /* QUIZ SCREEN */
+  .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .quiz-progress-info { font-size: 13px; color: var(--text2); }
+  .timer { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 1.1rem; font-weight: 500; }
+  .timer.warning { color: var(--danger); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin-bottom: 2rem; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+  .question-num { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+  .question-text { font-size: 1.15rem; font-weight: 600; line-height: 1.5; margin-bottom: 2rem; }
+  .options { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
+  .option {
+    padding: 14px 18px; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 14px; cursor: pointer;
+    transition: all 0.15s; text-align: left; width: 100%; font-family: var(--font);
+    color: var(--text); display: flex; align-items: center; gap: 12px;
+  }
+  .option:hover { border-color: var(--accent); background: rgba(124,106,247,0.08); }
+  .option.selected { border-color: var(--accent); background: rgba(124,106,247,0.15); color: var(--accent); }
+  .option.correct { border-color: var(--success); background: rgba(95,212,128,0.12); color: var(--success); }
+  .option.wrong { border-color: var(--danger); background: rgba(247,90,90,0.1); color: var(--danger); }
+  .option-letter { width: 28px; height: 28px; border-radius: 6px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .quiz-nav { display: flex; gap: 0.75rem; justify-content: flex-end; }
+  .btn-nav { padding: 10px 22px; border-radius: var(--radius-sm); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border2); background: transparent; color: var(--text2); }
+  .btn-nav:hover { background: var(--surface2); color: var(--text); }
+  .btn-nav.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-nav.primary:hover { opacity: 0.9; }
+  .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* RESULT SCREEN */
+  .result-hero { text-align: center; padding: 3rem 1rem; }
+  .score-ring { width: 140px; height: 140px; margin: 0 auto 1.5rem; position: relative; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-pct { font-size: 2rem; font-weight: 700; font-family: var(--mono); }
+  .score-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .result-grade { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .result-sub { font-size: 14px; color: var(--text2); }
+  .result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1.5rem 0; }
+  .r-stat { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem; text-align: center; }
+  .r-stat-val { font-size: 1.4rem; font-weight: 700; font-family: var(--mono); }
+  .r-stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+  .review-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+  .review-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem 1.25rem; border-left: 3px solid var(--border); }
+  .review-item.correct-item { border-left-color: var(--success); }
+  .review-item.wrong-item { border-left-color: var(--danger); }
+  .review-q { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .review-a { font-size: 12px; color: var(--text2); }
+  .review-a span { font-weight: 600; }
+  .review-a .correct-ans { color: var(--success); }
+  .review-a .wrong-ans { color: var(--danger); }
+
+  /* LEADERBOARD */
+  .lb-row { display: grid; grid-template-columns: 40px 1fr 80px 80px 80px; gap: 0; align-items: center; padding: 12px 16px; border-radius: var(--radius-sm); transition: background 0.15s; }
+  .lb-row:hover { background: var(--surface2); }
+  .lb-row.me { background: rgba(124,106,247,0.08); border: 1px solid rgba(124,106,247,0.2); }
+  .lb-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 4px; }
+  .lb-rank { font-family: var(--mono); font-weight: 700; font-size: 13px; }
+  .lb-rank.gold { color: #f7c56a; }
+  .lb-rank.silver { color: #b0b8c8; }
+  .lb-rank.bronze { color: #c87d4a; }
+  .lb-name { font-size: 14px; font-weight: 500; }
+  .lb-val { font-family: var(--mono); font-size: 13px; text-align: right; color: var(--text2); }
+  .lb-val.highlight { color: var(--accent); font-weight: 500; }
+  .avatar-sm { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+
+  /* ADMIN PANEL */
+  .admin-form { display: flex; flex-direction: column; gap: 1rem; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .option-row { display: flex; gap: 0.5rem; align-items: center; }
+  .option-row input { flex: 1; }
+  .option-row .opt-label { font-size: 12px; font-weight: 700; width: 24px; color: var(--text3); }
+  .correct-radio { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+  .btn-secondary { padding: 8px 16px; background: transparent; border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text2); font-family: var(--font); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .btn-secondary:hover { background: var(--surface2); color: var(--text); }
+  .btn-danger { padding: 8px 14px; background: rgba(247,90,90,0.1); border: 1px solid rgba(247,90,90,0.3); border-radius: var(--radius-sm); color: var(--danger); font-family: var(--font); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:hover { background: rgba(247,90,90,0.2); }
+  .quiz-admin-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .quiz-admin-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: var(--surface2); border-radius: var(--radius-sm); }
+  .quiz-admin-info { flex: 1; }
+  .quiz-admin-title { font-size: 14px; font-weight: 500; }
+  .quiz-admin-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .quiz-admin-actions { display: flex; gap: 0.5rem; }
+
+  /* PROFILE */
+  .profile-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+  .avatar-lg { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; }
+  .profile-name { font-size: 1.3rem; font-weight: 700; }
+  .profile-email { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .history-row { display: grid; grid-template-columns: 1fr 80px 80px 100px; gap: 0; align-items: center; padding: 10px 14px; border-radius: 6px; font-size: 13px; }
+  .history-row:hover { background: var(--surface2); }
+  .history-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 4px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 18px; font-size: 13px; font-weight: 500; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success-toast { border-color: rgba(95,212,128,0.4); color: var(--success); }
+  .toast.error-toast { border-color: rgba(247,90,90,0.4); color: var(--danger); }
+
+  /* SECTION HEADERS */
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .section-title { font-size: 1rem; font-weight: 600; }
+  .separator { height: 1px; background: var(--border); margin: 1.5rem 0; }
+  .empty-state { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  /* MOBILE */
+  @media (max-width: 640px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .field-row { grid-template-columns: 1fr; }
+    .result-stats { grid-template-columns: 1fr 1fr; }
+    .lb-row { grid-template-columns: 32px 1fr 60px 60px; }
+    .lb-row > :last-child { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="logo">Quiz<span>Arena</span></div>
+    <div class="nav-right" id="nav-right" style="display:none">
+      <span class="nav-user" id="nav-user"></span>
+      <span class="badge" id="nav-badge"></span>
+      <button class="btn-sm" onclick="logout()">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- AUTH SCREEN -->
+  <div class="screen active auth-screen" id="screen-auth">
+    <div class="auth-card">
+      <div style="text-align:center; margin-bottom:2rem;">
+        <div style="font-size:2rem; font-weight:800; letter-spacing:-0.03em;">Welcome to <span style="color:var(--accent)">QuizArena</span></div>
+        <div style="font-size:13px; color:var(--text2); margin-top:6px;">Test your knowledge, climb the leaderboard</div>
+      </div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+        <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</div>
+      </div>
+      <div id="login-form">
+        <div class="field"><label>Username</label><input type="text" id="login-user" placeholder="Enter username" /></div>
+        <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="Enter password" /></div>
+        <button class="btn-primary" onclick="doLogin()">Sign In</button>
+        <div style="font-size:11px; color:var(--text3); text-align:center; margin-top:1rem;">Demo: <strong style="color:var(--text2)">admin / admin123</strong> &nbsp;or&nbsp; <strong style="color:var(--text2)">alice / pass123</strong></div>
+      </div>
+      <div id="register-form" style="display:none">
+        <div class="field"><label>Username</label><input type="text" id="reg-user" placeholder="Choose a username" /></div>
+        <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.com" /></div>
+        <div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="Choose a password" /></div>
+        <div class="field"><label>Role</label>
+          <select id="reg-role"><option value="user">User</option><option value="admin">Admin</option></select>
+        </div>
+        <button class="btn-primary" onclick="doRegister()">Create Account</button>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- MAIN SCREEN -->
+  <div class="screen" id="screen-main">
+    <div class="main-layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-label">Main</div>
+        <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+          <span class="ni-icon">⬡</span> Dashboard
+        </button>
+        <button class="nav-item" id="nav-quizzes" onclick="showPage('quizzes')">
+          <span class="ni-icon">✦</span> Browse Quizzes
+        </button>
+        <button class="nav-item" id="nav-leaderboard" onclick="showPage('leaderboard')">
+          <span class="ni-icon">◈</span> Leaderboard
+        </button>
+        <div class="sidebar-label">Account</div>
+        <button class="nav-item" id="nav-profile" onclick="showPage('profile')">
+          <span class="ni-icon">○</span> My Profile
+        </button>
+        <div id="admin-nav" style="display:none">
+          <div class="sidebar-label">Admin</div>
+          <button class="nav-item" id="nav-admin" onclick="showPage('admin')">
+            <span class="ni-icon">◆</span> Manage Quizzes
+          </button>
+        </div>
+      </aside>
+      <main class="content" id="main-content">
+        <!-- pages injected here -->
+      </main>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="screen" id="screen-quiz">
+    <div style="max-width:680px; margin:0 auto; padding:2rem 1rem; width:100%">
+      <div class="quiz-header">
+        <div>
+          <div style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;" id="q-title"></div>
+          <div class="quiz-progress-info" id="q-progress"></div>
+        </div>
+        <div class="timer" id="q-timer">⏱ 00:00</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="q-progress-bar"></div></div>
+      <div class="card">
+        <div class="question-num" id="q-num"></div>
+        <div class="question-text" id="q-text"></div>
+        <div class="options" id="q-options"></div>
+        <div class="quiz-nav">
+          <button class="btn-nav" id="btn-prev" onclick="prevQuestion()">← Previous</button>
+          <button class="btn-nav" id="btn-next" onclick="nextQuestion()">Next →</button>
+          <button class="btn-nav primary" id="btn-submit" style="display:none" onclick="submitQuiz()">Submit Quiz</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="screen" id="screen-result">
+    <div style="max-width:640px; margin:0 auto; padding:2rem 1rem; width:100%">
+      <div class="result-hero">
+        <div class="score-ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="58" fill="none" stroke="var(--surface2)" stroke-width="12"/>
+            <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="364" id="score-arc" stroke-dashoffset="364"/>
+          </svg>
+          <div class="score-text">
+            <div class="score-pct" id="res-pct">0%</div>
+            <div class="score-lbl">Score</div>
+          </div>
+        </div>
+        <div class="result-grade" id="res-grade"></div>
+        <div class="result-sub" id="res-sub"></div>
+      </div>
+      <div class="result-stats">
+        <div class="r-stat"><div class="r-stat-val" id="rs-correct" style="color:var(--success)">0</div><div class="r-stat-label">Correct</div></div>
+        <div class="r-stat"><div class="r-stat-val" id="rs-wrong" style="color:var(--danger)">0</div><div class="r-stat-label">Wrong</div></div>
+        <div class="r-stat"><div class="r-stat-val" id="rs-time" style="color:var(--accent2)">0s</div><div class="r-stat-label">Time Taken</div></div>
+      </div>
+      <div style="display:flex; gap:0.75rem; justify-content:center; margin-bottom:1.5rem">
+        <button class="btn-nav primary" onclick="goToQuizzes()">Take Another Quiz</button>
+        <button class="btn-nav" onclick="showPage('leaderboard'); showMain()">View Leaderboard</button>
+      </div>
+      <div style="font-size:13px; font-weight:600; margin-bottom:0.75rem;">Review Answers</div>
+      <div class="review-list" id="review-list"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const DB = {
+  users: [
+    { id:1, username:'admin', email:'admin@quizarena.com', password:'admin123', role:'admin', joined:'2024-01-01' },
+    { id:2, username:'alice', email:'alice@example.com', password:'pass123', role:'user', joined:'2024-01-05' },
+    { id:3, username:'bob', email:'bob@example.com', password:'pass123', role:'user', joined:'2024-01-10' },
+    { id:4, username:'carol', email:'carol@example.com', password:'pass123', role:'user', joined:'2024-01-15' },
+  ],
+  quizzes: [
+    { id:1, title:'Science Fundamentals', category:'science', difficulty:'easy', timeLimit:300, createdBy:1, description:'Basic science concepts from physics, chemistry and biology.' },
+    { id:2, title:'World History: Ancient to Modern', category:'history', difficulty:'medium', timeLimit:420, createdBy:1, description:'Journey through key moments in world history.' },
+    { id:3, title:'Tech & Programming Basics', category:'technology', difficulty:'medium', timeLimit:360, createdBy:1, description:'Core concepts in computing and software development.' },
+    { id:4, title:'General Knowledge Challenge', category:'general', difficulty:'hard', timeLimit:300, createdBy:1, description:'A tough mix of trivia across all categories.' },
+    { id:5, title:'Mathematics Essentials', category:'math', difficulty:'medium', timeLimit:480, createdBy:1, description:'Arithmetic, algebra, geometry and beyond.' },
+  ],
+  questions: {
+    1: [
+      { id:1, text:'What is the speed of light in a vacuum (approx.)?', options:['150,000 km/s','300,000 km/s','500,000 km/s','750,000 km/s'], correct:1 },
+      { id:2, text:'Which element has the chemical symbol "O"?', options:['Gold','Osmium','Oxygen','Oganesson'], correct:2 },
+      { id:3, text:'What is the powerhouse of the cell?', options:['Nucleus','Ribosome','Mitochondria','Golgi apparatus'], correct:2 },
+      { id:4, text:'How many bones are in the adult human body?', options:['186','206','216','256'], correct:1 },
+      { id:5, text:'What force keeps planets in orbit around the sun?', options:['Magnetism','Friction','Gravity','Electromagnetism'], correct:2 },
+    ],
+    2: [
+      { id:1, text:'In which year did World War II end?', options:['1943','1944','1945','1946'], correct:2 },
+      { id:2, text:'Who was the first Roman Emperor?', options:['Julius Caesar','Augustus','Nero','Caligula'], correct:1 },
+      { id:3, text:'The French Revolution began in which year?', options:['1776','1789','1804','1815'], correct:1 },
+      { id:4, text:'Which civilization built Machu Picchu?', options:['Aztec','Maya','Inca','Olmec'], correct:2 },
+      { id:5, text:'What was the name of the ship that sank in 1912?', options:['Lusitania','Britannic','Titanic','Olympic'], correct:2 },
+      { id:6, text:'Who wrote "The Art of War"?', options:['Confucius','Sun Tzu','Laozi','Mencius'], correct:1 },
+    ],
+    3: [
+      { id:1, text:'What does "HTML" stand for?', options:['HyperText Markup Language','HighText Machine Language','HyperText Machine Learning','HighText Markup Link'], correct:0 },
+      { id:2, text:'Which company created the Python programming language?', options:['Google','Microsoft','Guido van Rossum (CNRI)','Apple'], correct:2 },
+      { id:3, text:'What does "CPU" stand for?', options:['Central Processing Unit','Core Processing Utility','Central Program Unit','Compute Processing Unit'], correct:0 },
+      { id:4, text:'What is the binary representation of the decimal number 10?', options:['1000','1010','1100','1110'], correct:1 },
+      { id:5, text:'Which protocol is used to send emails?', options:['HTTP','FTP','SMTP','SSH'], correct:2 },
+    ],
+    4: [
+      { id:1, text:'What is the capital of Australia?', options:['Sydney','Melbourne','Canberra','Brisbane'], correct:2 },
+      { id:2, text:'How many sides does a heptagon have?', options:['5','6','7','8'], correct:2 },
+      { id:3, text:'Which planet is known as the Red Planet?', options:['Venus','Jupiter','Saturn','Mars'], correct:3 },
+      { id:4, text:'Who painted the Mona Lisa?', options:['Michelangelo','Raphael','Leonardo da Vinci','Donatello'], correct:2 },
+      { id:5, text:'What is the largest ocean on Earth?', options:['Atlantic','Indian','Arctic','Pacific'], correct:3 },
+    ],
+    5: [
+      { id:1, text:'What is the value of π (pi) to 2 decimal places?', options:['3.12','3.14','3.16','3.18'], correct:1 },
+      { id:2, text:'What is the square root of 144?', options:['11','12','13','14'], correct:1 },
+      { id:3, text:'If a triangle has angles of 60°, 60°, and 60°, what type is it?', options:['Scalene','Isosceles','Equilateral','Right-angled'], correct:2 },
+      { id:4, text:'What is 15% of 200?', options:['25','30','35','40'], correct:1 },
+      { id:5, text:'What is the next prime number after 7?', options:['8','9','10','11'], correct:3 },
+      { id:6, text:'What is 2⁸?', options:['128','256','512','64'], correct:1 },
+    ],
+  },
+  results: [
+    { id:1, userId:2, quizId:1, score:80, correct:4, total:5, timeTaken:180, date:'2024-02-01' },
+    { id:2, userId:3, quizId:1, score:60, correct:3, total:5, timeTaken:240, date:'2024-02-02' },
+    { id:3, userId:4, quizId:2, score:83, correct:5, total:6, timeTaken:310, date:'2024-02-03' },
+    { id:4, userId:2, quizId:3, score:100, correct:5, total:5, timeTaken:200, date:'2024-02-04' },
+    { id:5, userId:3, quizId:4, score:75, correct:3, total:4, timeTaken:260, date:'2024-02-05' },
+    { id:6, userId:4, quizId:5, score:67, correct:4, total:6, timeTaken:400, date:'2024-02-06' },
+  ],
+  nextUserId: 5, nextQuizId: 6, nextResultId: 7,
+};
+
+let currentUser = null;
+let quizState = null;
+let timerInterval = null;
+let currentPage = 'dashboard';
+
+const avatarColors = ['rgba(124,106,247,0.25)','rgba(95,212,195,0.2)','rgba(247,162,106,0.2)','rgba(247,90,154,0.2)','rgba(95,212,128,0.2)'];
+const avatarText = ['var(--accent)','var(--accent2)','var(--accent3)','#f75a9a','var(--success)'];
+
+function getAvatar(uid, size='sm') {
+  const u = DB.users.find(x=>x.id===uid)||{username:'?'};
+  const i = uid % 5;
+  const cls = size==='lg' ? 'avatar-lg' : 'avatar-sm';
+  return `<div class="${cls}" style="background:${avatarColors[i]};color:${avatarText[i]}">${u.username[0].toUpperCase()}</div>`;
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}-toast show`;
+  setTimeout(()=>{ t.className='toast'; }, 2500);
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('login-form').style.display = tab==='login'?'block':'none';
+  document.getElementById('register-form').style.display = tab==='register'?'block':'none';
+  document.getElementById('auth-error').textContent = '';
+}
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const user = DB.users.find(x=>x.username===u && x.password===p);
+  if (!user) { document.getElementById('auth-error').textContent = 'Invalid username or password.'; return; }
+  currentUser = user;
+  afterLogin();
+}
+
+function doRegister() {
+  const u = document.getElementById('reg-user').value.trim();
+  const e = document.getElementById('reg-email').value.trim();
+  const p = document.getElementById('reg-pass').value;
+  const r = document.getElementById('reg-role').value;
+  if (!u||!e||!p) { document.getElementById('auth-error').textContent = 'All fields are required.'; return; }
+  if (DB.users.find(x=>x.username===u)) { document.getElementById('auth-error').textContent = 'Username already taken.'; return; }
+  const user = { id: DB.nextUserId++, username:u, email:e, password:p, role:r, joined: new Date().toISOString().split('T')[0] };
+  DB.users.push(user);
+  currentUser = user;
+  afterLogin();
+  showToast('Account created! Welcome to QuizArena.');
+}
+
+function afterLogin() {
+  document.getElementById('screen-auth').classList.remove('active');
+  document.getElementById('screen-main').classList.add('active');
+  document.getElementById('nav-right').style.display = 'flex';
+  document.getElementById('nav-user').textContent = currentUser.username;
+  const badge = document.getElementById('nav-badge');
+  badge.textContent = currentUser.role.toUpperCase();
+  badge.className = `badge badge-${currentUser.role}`;
+  document.getElementById('admin-nav').style.display = currentUser.role==='admin'?'block':'none';
+  showPage('dashboard');
+}
+
+function logout() {
+  currentUser = null;
+  clearInterval(timerInterval);
+  document.getElementById('screen-auth').classList.add('active');
+  document.getElementById('screen-main').classList.remove('active');
+  document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-result').classList.remove('active');
+  document.getElementById('nav-right').style.display = 'none';
+  document.getElementById('auth-error').textContent = '';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+function showMain() {
+  document.getElementById('screen-main').classList.add('active');
+  document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-result').classList.remove('active');
+}
+
+function showPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+page);
+  if (navEl) navEl.classList.add('active');
+  const c = document.getElementById('main-content');
+  const pages = { dashboard: renderDashboard, quizzes: renderQuizzes, leaderboard: renderLeaderboard, profile: renderProfile, admin: renderAdmin };
+  if (pages[page]) c.innerHTML = pages[page]();
+  else c.innerHTML = '';
+}
+
+function renderDashboard() {
+  const myResults = DB.results.filter(r=>r.userId===currentUser.id);
+  const totalQuizzes = DB.quizzes.length;
+  const avgScore = myResults.length ? Math.round(myResults.reduce((a,r)=>a+r.score,0)/myResults.length) : 0;
+  const best = myResults.length ? Math.max(...myResults.map(r=>r.score)) : 0;
+  const recentQuizzes = DB.quizzes.slice(0,3);
+  return `
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Welcome back, ${currentUser.username}! Ready to quiz?</div>
+    <div class="grid-2">
+      <div class="stat-card"><div class="stat-label">Quizzes Available</div><div class="stat-val accent">${totalQuizzes}</div></div>
+      <div class="stat-card"><div class="stat-label">Quizzes Taken</div><div class="stat-val">${myResults.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Average Score</div><div class="stat-val success">${avgScore}%</div></div>
+      <div class="stat-card"><div class="stat-label">Best Score</div><div class="stat-val amber">${best}%</div></div>
+    </div>
+    <div class="section-head"><div class="section-title">Featured Quizzes</div><button class="btn-secondary" onclick="showPage('quizzes')">View All →</button></div>
+    <div class="quiz-grid">
+      ${recentQuizzes.map(q=>quizCardHTML(q)).join('')}
+    </div>
+    ${myResults.length ? `
+    <div class="separator"></div>
+    <div class="section-title" style="margin-bottom:0.75rem">Recent Activity</div>
+    ${myResults.slice(-3).reverse().map(r=>{
+      const q=DB.quizzes.find(x=>x.id===r.quizId);
+      return `<div class="card-sm" style="margin-bottom:0.5rem; display:flex; align-items:center; justify-content:space-between">
+        <div><div style="font-size:13px;font-weight:500">${q?q.title:'Quiz'}</div><div style="font-size:11px;color:var(--text3)">${r.date} &nbsp;·&nbsp; ${r.correct}/${r.total} correct</div></div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:var(--mono);color:${r.score>=80?'var(--success)':r.score>=60?'var(--accent3)':'var(--danger)'}">${r.score}%</div>
+      </div>`;
+    }).join('')}` : ''}
+  `;
+}
+
+function quizCardHTML(q) {
+  const qCount = (DB.questions[q.id]||[]).length;
+  const mins = Math.floor(q.timeLimit/60);
+  return `<div class="quiz-card" onclick="startQuiz(${q.id})">
+    <div class="quiz-cat cat-${q.category}">${q.category.toUpperCase()}</div>
+    <div class="quiz-title">${q.title}</div>
+    <div style="font-size:12px;color:var(--text3);line-height:1.4">${q.description}</div>
+    <div class="quiz-meta">
+      <span>${qCount} questions</span>
+      <span>${mins} min</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="diff-badge diff-${q.difficulty}">${q.difficulty}</span>
+    </div>
+    <button class="btn-start">Start Quiz →</button>
+  </div>`;
+}
+
+function renderQuizzes() {
+  return `
+    <div class="page-title">Browse Quizzes</div>
+    <div class="page-sub">Choose a quiz to test your knowledge</div>
+    <div class="quiz-grid">${DB.quizzes.map(q=>quizCardHTML(q)).join('')}</div>
+  `;
+}
+
+function renderLeaderboard() {
+  const allScores = {};
+  DB.results.forEach(r=>{
+    if(!allScores[r.userId]) allScores[r.userId]={total:0,count:0,best:0};
+    allScores[r.userId].total+=r.score;
+    allScores[r.userId].count++;
+    allScores[r.userId].best=Math.max(allScores[r.userId].best,r.score);
+  });
+  const rows = Object.entries(allScores).map(([uid,s])=>({
+    uid:+uid, avg:Math.round(s.total/s.count), best:s.best, count:s.count
+  })).sort((a,b)=>b.avg-a.avg);
+  const rankClass = i=>i===0?'gold':i===1?'silver':i===2?'bronze':'';
+  const rankSymbol = i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+  return `
+    <div class="page-title">Leaderboard</div>
+    <div class="page-sub">Top performers across all quizzes</div>
+    <div class="card">
+      <div class="lb-row lb-header">
+        <div>Rank</div><div>Player</div><div style="text-align:right">Avg</div><div style="text-align:right">Best</div><div style="text-align:right">Quizzes</div>
+      </div>
+      ${rows.map((r,i)=>{
+        const u=DB.users.find(x=>x.id===r.uid)||{username:'?'};
+        const isMe=r.uid===currentUser.id;
+        return `<div class="lb-row${isMe?' me':''}">
+          <div class="lb-rank ${rankClass(i)}">${rankSymbol(i)}</div>
+          <div style="display:flex;align-items:center">${getAvatar(r.uid)} <span class="lb-name">${u.username}${isMe?' <span style="font-size:10px;color:var(--accent)">(you)</span>':''}</span></div>
+          <div class="lb-val highlight">${r.avg}%</div>
+          <div class="lb-val">${r.best}%</div>
+          <div class="lb-val">${r.count}</div>
+        </div>`;
+      }).join('')}
+      ${rows.length===0?'<div class="empty-state">No results yet. Be the first to take a quiz!</div>':''}
+    </div>
+    <div class="separator"></div>
+    <div class="section-title" style="margin-bottom:0.75rem">Quiz Stats</div>
+    <div class="quiz-admin-list">
+      ${DB.quizzes.map(q=>{
+        const qRes=DB.results.filter(r=>r.quizId===q.id);
+        const avg=qRes.length?Math.round(qRes.reduce((a,r)=>a+r.score,0)/qRes.length):0;
+        return `<div class="quiz-admin-item">
+          <div class="quiz-admin-info">
+            <div class="quiz-admin-title">${q.title}</div>
+            <div class="quiz-admin-meta">${qRes.length} attempt${qRes.length!==1?'s':''} &nbsp;·&nbsp; Avg score: ${avg}%</div>
+          </div>
+          <div style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:${avg>=80?'var(--success)':avg>=60?'var(--accent3)':'var(--danger)'}">${avg}%</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderProfile() {
+  const myResults = DB.results.filter(r=>r.userId===currentUser.id);
+  const avg = myResults.length?Math.round(myResults.reduce((a,r)=>a+r.score,0)/myResults.length):0;
+  return `
+    <div class="page-title">My Profile</div>
+    <div class="page-sub">Your account details and quiz history</div>
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="profile-header">
+        ${getAvatar(currentUser.id,'lg')}
+        <div>
+          <div class="profile-name">${currentUser.username}</div>
+          <div class="profile-email">${currentUser.email}</div>
+          <div style="margin-top:6px"><span class="badge badge-${currentUser.role}">${currentUser.role.toUpperCase()}</span></div>
+        </div>
+      </div>
+      <div class="separator" style="margin:1rem 0"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem">
+        <div class="stat-card"><div class="stat-label">Quizzes Taken</div><div class="stat-val accent">${myResults.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Average Score</div><div class="stat-val success">${avg}%</div></div>
+        <div class="stat-card"><div class="stat-label">Member Since</div><div style="font-size:1rem;font-weight:600;color:var(--accent3)">${currentUser.joined}</div></div>
+      </div>
+    </div>
+    <div class="section-title" style="margin-bottom:0.75rem">Quiz History</div>
+    ${myResults.length===0?'<div class="empty-state">No quizzes taken yet.</div>':''}
+    ${myResults.length?`<div class="card">
+      <div class="history-row history-header"><div>Quiz</div><div style="text-align:right">Score</div><div style="text-align:right">Result</div><div style="text-align:right">Date</div></div>
+      ${myResults.map(r=>{
+        const q=DB.quizzes.find(x=>x.id===r.quizId)||{title:'?'};
+        return `<div class="history-row">
+          <div style="font-size:13px">${q.title}</div>
+          <div style="text-align:right;font-family:var(--mono);font-weight:600;color:${r.score>=80?'var(--success)':r.score>=60?'var(--accent3)':'var(--danger)'}">${r.score}%</div>
+          <div style="text-align:right;font-size:12px;color:var(--text3)">${r.correct}/${r.total}</div>
+          <div style="text-align:right;font-size:12px;color:var(--text3)">${r.date}</div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+  `;
+}
+
+let editingQuizId = null;
+let editQuestions = [];
+
+function renderAdmin() {
+  return `
+    <div class="page-title">Manage Quizzes</div>
+    <div class="page-sub">Create, edit, and delete quizzes</div>
+    <div class="section-head">
+      <div class="section-title">All Quizzes (${DB.quizzes.length})</div>
+      <button class="btn-primary" style="width:auto;padding:8px 18px" onclick="openCreateQuiz()">+ New Quiz</button>
+    </div>
+    <div class="quiz-admin-list" id="admin-quiz-list">
+      ${DB.quizzes.map(q=>`
+        <div class="quiz-admin-item">
+          <div class="quiz-admin-info">
+            <div class="quiz-admin-title">${q.title}</div>
+            <div class="quiz-admin-meta">${q.category} · ${q.difficulty} · ${(DB.questions[q.id]||[]).length} questions · ${Math.floor(q.timeLimit/60)} min</div>
+          </div>
+          <div class="quiz-admin-actions">
+            <button class="btn-secondary" onclick="openEditQuiz(${q.id})">Edit</button>
+            <button class="btn-danger" onclick="deleteQuiz(${q.id})">Delete</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div id="quiz-editor" style="display:none;margin-top:2rem">
+      <div class="separator"></div>
+      <div class="section-title" id="editor-title" style="margin-bottom:1.25rem">Create New Quiz</div>
+      <div class="admin-form">
+        <div class="field-row">
+          <div class="field"><label>Quiz Title</label><input id="qz-title" placeholder="e.g. Science Fundamentals" /></div>
+          <div class="field"><label>Category</label>
+            <select id="qz-cat"><option value="science">Science</option><option value="history">History</option><option value="technology">Technology</option><option value="general">General</option><option value="math">Math</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Difficulty</label>
+            <select id="qz-diff"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+          </div>
+          <div class="field"><label>Time Limit (seconds)</label><input id="qz-time" type="number" value="300" min="60" /></div>
+        </div>
+        <div class="field"><label>Description</label><input id="qz-desc" placeholder="Short description of the quiz" /></div>
+        <div class="separator"></div>
+        <div class="section-head"><div class="section-title">Questions</div><button class="btn-secondary" onclick="addQuestion()">+ Add Question</button></div>
+        <div id="questions-editor"></div>
+        <div style="display:flex;gap:0.75rem;margin-top:1rem">
+          <button class="btn-primary" style="width:auto;padding:10px 24px" onclick="saveQuiz()">Save Quiz</button>
+          <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openCreateQuiz() {
+  editingQuizId = null;
+  editQuestions = [{ text:'', options:['','','',''], correct:0 }];
+  document.getElementById('quiz-editor').style.display = 'block';
+  document.getElementById('editor-title').textContent = 'Create New Quiz';
+  document.getElementById('qz-title').value = '';
+  document.getElementById('qz-desc').value = '';
+  document.getElementById('qz-time').value = 300;
+  renderQuestionsEditor();
+  document.getElementById('quiz-editor').scrollIntoView({behavior:'smooth'});
+}
+
+function openEditQuiz(id) {
+  editingQuizId = id;
+  const q = DB.quizzes.find(x=>x.id===id);
+  editQuestions = JSON.parse(JSON.stringify(DB.questions[id]||[{ text:'', options:['','','',''], correct:0 }]));
+  document.getElementById('quiz-editor').style.display = 'block';
+  document.getElementById('editor-title').textContent = 'Edit Quiz';
+  document.getElementById('qz-title').value = q.title;
+  document.getElementById('qz-cat').value = q.category;
+  document.getElementById('qz-diff').value = q.difficulty;
+  document.getElementById('qz-time').value = q.timeLimit;
+  document.getElementById('qz-desc').value = q.description;
+  renderQuestionsEditor();
+  document.getElementById('quiz-editor').scrollIntoView({behavior:'smooth'});
+}
+
+function addQuestion() {
+  editQuestions.push({ text:'', options:['','','',''], correct:0 });
+  renderQuestionsEditor();
+}
+
+function removeQuestion(i) {
+  if(editQuestions.length<=1){ showToast('Need at least one question','error'); return; }
+  editQuestions.splice(i,1);
+  renderQuestionsEditor();
+}
+
+function renderQuestionsEditor() {
+  const c = document.getElementById('questions-editor');
+  c.innerHTML = editQuestions.map((q,qi)=>`
+    <div class="card-sm" style="margin-bottom:0.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+        <div style="font-size:12px;font-weight:700;color:var(--text3)">QUESTION ${qi+1}</div>
+        <button class="btn-danger" onclick="removeQuestion(${qi})" style="padding:4px 10px;font-size:11px">Remove</button>
+      </div>
+      <div class="field"><label>Question</label><input value="${q.text.replace(/"/g,'&quot;')}" oninput="editQuestions[${qi}].text=this.value" placeholder="Enter question text" /></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Options <span style="color:var(--accent);font-size:10px">(select correct answer)</span></div>
+      ${q.options.map((opt,oi)=>`
+        <div class="option-row" style="margin-bottom:8px">
+          <span class="opt-label">${String.fromCharCode(65+oi)}</span>
+          <input value="${opt.replace(/"/g,'&quot;')}" oninput="editQuestions[${qi}].options[${oi}]=this.value" placeholder="Option ${String.fromCharCode(65+oi)}" />
+          <input type="radio" class="correct-radio" name="correct-${qi}" ${q.correct===oi?'checked':''} onclick="editQuestions[${qi}].correct=${oi}" title="Mark as correct" />
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function saveQuiz() {
+  const title = document.getElementById('qz-title').value.trim();
+  const desc = document.getElementById('qz-desc').value.trim();
+  const timeLimit = +document.getElementById('qz-time').value;
+  if(!title){ showToast('Title is required','error'); return; }
+  if(editQuestions.some(q=>!q.text.trim()||q.options.some(o=>!o.trim()))){ showToast('Fill all question fields','error'); return; }
+  if(editingQuizId) {
+    const q = DB.quizzes.find(x=>x.id===editingQuizId);
+    q.title=title; q.description=desc; q.timeLimit=timeLimit;
+    q.category=document.getElementById('qz-cat').value;
+    q.difficulty=document.getElementById('qz-diff').value;
+    DB.questions[editingQuizId]=editQuestions.map((q,i)=>({...q,id:i+1}));
+    showToast('Quiz updated!');
+  } else {
+    const id = DB.nextQuizId++;
+    DB.quizzes.push({ id, title, description:desc, category:document.getElementById('qz-cat').value, difficulty:document.getElementById('qz-diff').value, timeLimit, createdBy:currentUser.id });
+    DB.questions[id]=editQuestions.map((q,i)=>({...q,id:i+1}));
+    showToast('Quiz created!');
+  }
+  showPage('admin');
+}
+
+function cancelEdit() { document.getElementById('quiz-editor').style.display='none'; }
+
+function deleteQuiz(id) {
+  if(!confirm('Delete this quiz and all its results?')) return;
+  DB.quizzes = DB.quizzes.filter(q=>q.id!==id);
+  delete DB.questions[id];
+  DB.results = DB.results.filter(r=>r.quizId!==id);
+  showToast('Quiz deleted.','error');
+  showPage('admin');
+}
+
+function startQuiz(quizId) {
+  const quiz = DB.quizzes.find(q=>q.id===quizId);
+  const questions = DB.questions[quizId]||[];
+  if(!questions.length){ showToast('This quiz has no questions yet','error'); return; }
+  quizState = { quiz, questions, answers: new Array(questions.length).fill(null), current:0, timeLeft: quiz.timeLimit, startTime: Date.now() };
+  document.getElementById('screen-main').classList.remove('active');
+  document.getElementById('screen-quiz').classList.add('active');
+  document.getElementById('q-title').textContent = quiz.title.toUpperCase();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(tickTimer, 1000);
+  renderQuestion();
+}
+
+function tickTimer() {
+  quizState.timeLeft--;
+  const m=Math.floor(quizState.timeLeft/60).toString().padStart(2,'0');
+  const s=(quizState.timeLeft%60).toString().padStart(2,'0');
+  const el=document.getElementById('q-timer');
+  el.textContent=`⏱ ${m}:${s}`;
+  el.className='timer'+(quizState.timeLeft<=30?' warning':'');
+  if(quizState.timeLeft<=0){ clearInterval(timerInterval); submitQuiz(); }
+}
+
+function renderQuestion() {
+  const {questions,current,answers}=quizState;
+  const q=questions[current];
+  document.getElementById('q-num').textContent=`Question ${current+1} of ${questions.length}`;
+  document.getElementById('q-progress').textContent=`${answers.filter(a=>a!==null).length} answered`;
+  document.getElementById('q-text').textContent=q.text;
+  document.getElementById('q-progress-bar').style.width=`${((current+1)/questions.length)*100}%`;
+  const opts=document.getElementById('q-options');
+  opts.innerHTML=q.options.map((o,i)=>`
+    <button class="option ${answers[current]===i?'selected':''}" onclick="selectAnswer(${i})">
+      <span class="option-letter">${String.fromCharCode(65+i)}</span>${o}
+    </button>
+  `).join('');
+  document.getElementById('btn-prev').disabled=current===0;
+  document.getElementById('btn-next').style.display=current<questions.length-1?'block':'none';
+  document.getElementById('btn-submit').style.display=current===questions.length-1?'block':'none';
+}
+
+function selectAnswer(i) {
+  quizState.answers[quizState.current]=i;
+  renderQuestion();
+}
+
+function prevQuestion() { if(quizState.current>0){ quizState.current--; renderQuestion(); } }
+function nextQuestion() { if(quizState.current<quizState.questions.length-1){ quizState.current++; renderQuestion(); } }
+
+function submitQuiz() {
+  clearInterval(timerInterval);
+  const {quiz,questions,answers,startTime}=quizState;
+  const timeTaken=Math.round((Date.now()-startTime)/1000);
+  let correct=0;
+  answers.forEach((a,i)=>{ if(a===questions[i].correct) correct++; });
+  const total=questions.length;
+  const score=Math.round((correct/total)*100);
+  const result={ id:DB.nextResultId++, userId:currentUser.id, quizId:quiz.id, score, correct, total, timeTaken, date:new Date().toISOString().split('T')[0] };
+  DB.results.push(result);
+  showResult(result, questions, answers);
+}
+
+function showResult(result, questions, answers) {
+  document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-result').classList.add('active');
+  document.getElementById('screen-main').classList.remove('active');
+  document.getElementById('res-pct').textContent=result.score+'%';
+  const grade = result.score>=90?'Excellent! 🎉':result.score>=80?'Great Job! 👏':result.score>=70?'Good Work! 💪':result.score>=60?'Not Bad! 📚':'Keep Practicing! 🔄';
+  const sub = result.score>=80?'You have a strong grasp of the material.':result.score>=60?'A little more practice and you\'ll ace it!':'Review the material and try again.';
+  document.getElementById('res-grade').textContent=grade;
+  document.getElementById('res-sub').textContent=sub;
+  document.getElementById('rs-correct').textContent=result.correct;
+  document.getElementById('rs-wrong').textContent=result.total-result.correct;
+  document.getElementById('rs-time').textContent=result.timeTaken+'s';
+  const arc=document.getElementById('score-arc');
+  const pct=result.score/100;
+  arc.style.strokeDashoffset=364-(364*pct);
+  arc.style.stroke=result.score>=80?'var(--success)':result.score>=60?'var(--accent3)':'var(--danger)';
+  const rl=document.getElementById('review-list');
+  rl.innerHTML=questions.map((q,i)=>{
+    const chosen=answers[i];
+    const isCorrect=chosen===q.correct;
+    return `<div class="review-item ${isCorrect?'correct-item':'wrong-item'}">
+      <div class="review-q">${i+1}. ${q.text}</div>
+      <div class="review-a">
+        ${chosen!==null?`Your answer: <span class="${isCorrect?'correct-ans':'wrong-ans'}">${q.options[chosen]}</span>`:
+        `<span style="color:var(--text3)">Not answered</span>`}
+        ${!isCorrect?` · Correct: <span class="correct-ans">${q.options[q.correct]}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goToQuizzes() {
+  document.getElementById('screen-result').classList.remove('active');
+  showMain();
+  showPage('quizzes');
+}
+</script>
+</body>
+</html>
