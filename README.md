@@ -1,8 +1,3 @@
-Today
-Develop an application for Quiz System using the 
-front end tool and database connectivity
-You can build a full-stack Quiz System by combining a modern frontend framework (React or Angular) with a backend (Spring Boot, Node.js/Express, or Rust Actix) and connecting it to a relational database like MySQL or PostgreSQL. This ensures smooth quiz creation, participation, and result tracking with secure authentication.
-
 🔑 Core Architecture
 Frontend
 
